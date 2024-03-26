@@ -1,28 +1,41 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, Request, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Request,
+  UseGuards,
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
-import { CreateAuthDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
+import { LocalAuthGuard } from './guards/local-auth.guard';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { AuthGuard } from '@nestjs/passport';
+import { CurrentUser } from './decorators/current-user.decorator';
+import { User } from 'src/users/entities/user.entity';
+
+// auth/auth.controller.ts
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('/login')
-    @UseGuards(AuthGuard('local'))
+  @UseGuards(LocalAuthGuard)
   login(@Request() request) {
-
-    const token = this.authService.createToken(request.user)
-    console.log(token)
     return {
       user: request.user,
       accessToken: this.authService.createToken(request.user),
-    }; 
+    };
   }
 
-  @Get()
-  findAll() {
-    return this.authService.findAll();
+  @Get('profile')
+  @UseGuards(JwtAuthGuard)
+  getProfile(@CurrentUser() user: User) {
+    return user;
   }
 
   @Get(':id')
